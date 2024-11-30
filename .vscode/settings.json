@@ -1,0 +1,12 @@
+{
+    "java.project.sourcePaths": [
+        "src"
+    ],
+    "java.project.outputPath": "bin",
+    "java.project.referencedLibraries": [
+        "lib/mssql-jdbc-12.8.0.jre11.jar",
+        "d:\\SqlServer\\mssql-jdbc-12.8.0.jre11.jar",
+        "c:\\Users\\23110\\Downloads\\mssql-jdbc-12.8.0.jre11.jar"
+    ],
+    "java.debug.settings.console": "internalConsole"
+}
