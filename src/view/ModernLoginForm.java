@@ -1,3 +1,4 @@
+package view;
 import java.awt.*;
 import java.awt.event.*;
 import java.sql.Connection;
@@ -5,6 +6,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import javax.swing.*;
+import view.ExpenseManagerView;
 public class ModernLoginForm {
     public void UI() {
         // Tạo cửa sổ JFrame
@@ -28,7 +30,8 @@ public class ModernLoginForm {
         descriptionLabel.setForeground(new Color(106, 112, 128));
 
         // Đọc hình ảnh từ file và tạo ImageIcon
-        ImageIcon imageIcon = new ImageIcon(getClass().getResource("/img-login.jpg"));
+        ImageIcon imageIcon = new ImageIcon("D:\\OOP_PROJECT\\src\\img\\img-login.jpg");
+
 
         // Tạo JLabel và đặt hình ảnh vào
         JLabel imageLabel = new JLabel(imageIcon);
@@ -188,7 +191,8 @@ loginButton.addActionListener(new ActionListener() {
                 // Ví dụ: Mở một cửa sổ mới hoặc ẩn cửa sổ đăng nhập
                 frame.dispose();  // Đóng cửa sổ đăng nhập
                 // openDashboard(); // Ví dụ mở một cửa sổ chính sau khi đăng nhập thành công
-                new ExpenseManager(); // Ví dụ mở ứng dụng quản lý chi tiêu
+                ExpenseManagerView expenseManager = new ExpenseManagerView();
+                expenseManager.createUI(); // Ví dụ mở ứng dụng quản lý chi tiêu
             } else {
                 JOptionPane.showMessageDialog(frame, "Invalid username or password", "Error", JOptionPane.ERROR_MESSAGE);
             }

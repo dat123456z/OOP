@@ -1,12 +1,12 @@
+package view;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.SQLException;
 
-public class DatabaseConnection {
-
-    public static Connection initializeDatabaze() {
+public class SQLConnection {
+    public static Connection getSQLServerConnection() {
         String dbDriver = "com.microsoft.sqlserver.jdbc.SQLServerDriver";
         String dbURL = "jdbc:sqlserver://localhost:1433";
-
         String dbName = "Laptrinh";
         String dbUsername = "sa";
         String dbPassword = "13051980";
@@ -15,16 +15,19 @@ public class DatabaseConnection {
         Connection conn = null;
 
         try {
-            // Load the SQL Server JDBC driver
+            // Load SQL Server JDBC driver
             Class.forName(dbDriver);
-            // Create the connection
+            // Establish connection
             conn = DriverManager.getConnection(connectionURL, dbUsername, dbPassword);
-            System.out.println("Connect successfully");
-        } catch (Exception ex) {
-            System.out.println("Connect failure: " + ex.getMessage());
-            ex.printStackTrace();
+            System.out.println("Connection successful!");
+        } catch (ClassNotFoundException e) {
+            System.err.println("SQL Server JDBC Driver not found.");
+            e.printStackTrace();
+        } catch (SQLException e) {
+            System.err.println("Failed to establish a connection to the database.");
+            e.printStackTrace();
         }
-        // Return the connection object
+
         return conn;
     }
 }
