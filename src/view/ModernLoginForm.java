@@ -6,7 +6,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import javax.swing.*;
-import view.ExpenseManagerView;
 public class ModernLoginForm {
     public void UI() {
         // Tạo cửa sổ JFrame
@@ -192,7 +191,12 @@ loginButton.addActionListener(new ActionListener() {
                 frame.dispose();  // Đóng cửa sổ đăng nhập
                 // openDashboard(); // Ví dụ mở một cửa sổ chính sau khi đăng nhập thành công
                 ExpenseManagerView expenseManager = new ExpenseManagerView();
-                expenseManager.createUI(); // Ví dụ mở ứng dụng quản lý chi tiêu
+                try {
+                    ExpenseManagerView expenseManagerView = new ExpenseManagerView();
+                    expenseManagerView.createUI(); // Ví dụ mở ứng dụng quản lý chi tiêu
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(frame, "Error opening Expense Manager: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
             } else {
                 JOptionPane.showMessageDialog(frame, "Invalid username or password", "Error", JOptionPane.ERROR_MESSAGE);
             }
