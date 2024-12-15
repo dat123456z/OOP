@@ -2,7 +2,7 @@
     "java.project.sourcePaths": [
        "src/controller",
         "src/model",
-        "src/view"
+        "src/_view"
     ],
     "java.project.outputPath": "bin",
     "java.project.referencedLibraries": [

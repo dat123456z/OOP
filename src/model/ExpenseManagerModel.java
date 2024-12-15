@@ -1,6 +1,5 @@
 package model;
 public class ExpenseManagerModel {
-    private int id; // Assuming you have an ID field in your database
     private String category;
     private String description;
     private double amount;
@@ -11,14 +10,6 @@ public class ExpenseManagerModel {
         this.description = description;
         this.amount = amount;
         this.date = date;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
     }
 
     public String getCategory() {
@@ -53,4 +44,12 @@ public class ExpenseManagerModel {
         this.date = date;
     }
 
+public void printInfo() {
+    System.out.println("Category: " + category);
+    System.out.println("Description: " + description);
+    System.out.println("Amount: " + amount);
+    System.out.println("Date: " + date);
+}
+
+    
 }
