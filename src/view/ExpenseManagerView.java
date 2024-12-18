@@ -12,7 +12,9 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import model.ExpenseManagerModel;
-
+import CRUD.AddExpense;
+import CRUD.EditExpense;
+import CRUD.DeleteExpense;
 public class ExpenseManagerView {
 
     public void createUI() throws SQLException {
@@ -107,7 +109,7 @@ public class ExpenseManagerView {
         actionPanel.setBackground(new Color(236, 240, 241));
         actionPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        String[] buttons = {"Add Expense", "Edit", "Delete"};
+        String[] buttons = {"Add Expense", "Edit Expense", "Delete Expense"};
         Color[] btnColors = {new Color(41, 128, 185), new Color(39, 174, 96), new Color(192, 57, 43)};
 
         for (int i = 0; i < buttons.length; i++) {
@@ -123,67 +125,11 @@ public class ExpenseManagerView {
             final int index = i; // Chỉ số nút
             btn.addActionListener(e -> {
                 if (buttons[index].equals("Add Expense")) {
-                    // Hiển thị form nhập liệu
-                    JTextField categoryField = new JTextField();
-                    JTextField descriptionField = new JTextField();
-                    JTextField dateField = new JTextField();
-                    JTextField amountField = new JTextField();
-        
-                    Object[] message = {
-                        "Category:", categoryField,
-                        "Description:", descriptionField,
-                        "Date (yyyy-MM-dd):", dateField,
-                        "Amount:", amountField
-                    };
-        
-                    int option = JOptionPane.showConfirmDialog(
-                            frame, message, "Add New Expense", JOptionPane.OK_CANCEL_OPTION);
-        
-                    if (option == JOptionPane.OK_OPTION) {
-                        try {
-                            String category = categoryField.getText().trim();
-                            String description = descriptionField.getText().trim();
-                            String date = dateField.getText().trim();
-                            double amount = Double.parseDouble(amountField.getText().trim());
-                            String datetoFormat = formatDateString(date);
-                            // Kiểm tra dữ liệu đầu vào
-                            if (category.isEmpty() || description.isEmpty() || date.isEmpty()) {
-                                JOptionPane.showMessageDialog(frame, "Please fill in all fields!", "Input Error", JOptionPane.ERROR_MESSAGE);
-                                return;
-                            }
-        
-                            // Thêm dữ liệu vào JTable
-                            model.addRow(new Object[]{category, description, date, amount});
-                            
-                            // Thêm dữ liệu vào SQL
-                            String insertSQL = "INSERT INTO expenses (category, description, date, amount) VALUES (?, ?, ?, ?)";
-                            try (PreparedStatement pstmt = conn.prepareStatement(insertSQL)) {
-                                pstmt.setString(1, category);
-                                pstmt.setString(2, description);
-                                pstmt.setDate(3, java.sql.Date.valueOf(datetoFormat));
-                                pstmt.setDouble(4, amount);
-                                pstmt.executeUpdate();
-                            }
-                            JOptionPane.showMessageDialog(frame, "Expense added successfully!");
-        
-                        } catch (NumberFormatException ex) {
-                            JOptionPane.showMessageDialog(frame, "Invalid amount format! Please enter a number.", "Input Error", JOptionPane.ERROR_MESSAGE);
-                        } catch (IllegalArgumentException ex) {
-                            JOptionPane.showMessageDialog(frame, "Invalid date format! Use yyyy-MM-dd.", "Input Error", JOptionPane.ERROR_MESSAGE);
-                        } catch (SQLException ex) {
-                            JOptionPane.showMessageDialog(frame, "Database Error: " + ex.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
-                            ex.printStackTrace();
-                        } catch (Exception ex) {
-                            JOptionPane.showMessageDialog(frame, "Unexpected Error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-                            ex.printStackTrace();
-                        }
-                    }
-                } 
-                // Chức năng Edit và Delete vẫn giữ nguyên
-                else if (buttons[index].equals("Edit")) {
-                    JOptionPane.showMessageDialog(frame, "Edit Expense clicked!", "Info", JOptionPane.INFORMATION_MESSAGE);
-                } else if (buttons[index].equals("Delete")) {
-                    JOptionPane.showMessageDialog(frame, "Delete Expense clicked!", "Info", JOptionPane.INFORMATION_MESSAGE);
+                    AddExpense.AddExpense(model, conn, frame);
+                } else if (buttons[index].equals("Edit Expense")) {
+                    EditExpense.EditExpense(model, conn, frame, table);
+                } else if (buttons[index].equals("Delete Expense")) {
+                    DeleteExpense.DeleteExpense(model, conn, frame, table);
                 }
             });
         
