@@ -7,7 +7,8 @@
     "java.project.outputPath": "bin",
     "java.project.referencedLibraries": [
         "d:\\OOP_PROJECT\\lib\\mssql-jdbc-12.8.0.jre11.jar",
-        "c:\\Users\\23110\\Downloads\\mssql-jdbc-12.8.0.jre11.jar"
+        "c:\\Users\\23110\\Downloads\\mssql-jdbc-12.8.0.jre11.jar",
+        "lib/jfreechart-1.5.3.jar"
     ],
     "java.debug.settings.console": "internalConsole"
     // "files.exclude": {
