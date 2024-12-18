@@ -1,9 +1,12 @@
+package view;
 import java.awt.*;
 import java.awt.event.*;
-import java.util.Arrays;
-
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import javax.swing.*;
-public class tempCodeRunnerFile {
+public class ModernLoginForm {
     public void UI() {
         // Tạo cửa sổ JFrame
         JFrame frame = new JFrame("Modern Login Form");
@@ -26,7 +29,8 @@ public class tempCodeRunnerFile {
         descriptionLabel.setForeground(new Color(106, 112, 128));
 
         // Đọc hình ảnh từ file và tạo ImageIcon
-        ImageIcon imageIcon = new ImageIcon("img-login.jpg");
+        ImageIcon imageIcon = new ImageIcon("D:\\OOP_PROJECT\\src\\img\\img-login.jpg");
+
 
         // Tạo JLabel và đặt hình ảnh vào
         JLabel imageLabel = new JLabel(imageIcon);
@@ -163,9 +167,74 @@ public class tempCodeRunnerFile {
                 createAccountWindow(frame);
             }
         });
+
+        // Sự kiện cho nút Login
+loginButton.addActionListener(new ActionListener() {
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        // Lấy username và password từ các trường nhập liệu
+        String username = usernameField.getText();
+        char[] password = passwordField.getPassword();  // Lấy mật khẩu dạng char[]
+        
+        // Kiểm tra xem người dùng có nhập đủ thông tin không
+        if (username.isEmpty() || password.length == 0) {
+            JOptionPane.showMessageDialog(frame, "Please enter both username and password", "Error", JOptionPane.ERROR_MESSAGE);
+            return; // Dừng lại nếu thông tin chưa đầy đủ
+        }
+        
+        // Gọi phương thức để xác thực thông tin đăng nhập
+        try {
+            if (validateLogin(username, new String(password))) {
+                JOptionPane.showMessageDialog(frame, "Login successful!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                // Tiến hành chuyển hướng hoặc các hành động khác sau khi đăng nhập thành công
+                // Ví dụ: Mở một cửa sổ mới hoặc ẩn cửa sổ đăng nhập
+                frame.dispose();  // Đóng cửa sổ đăng nhập
+                // openDashboard(); // Ví dụ mở một cửa sổ chính sau khi đăng nhập thành công
+                ExpenseManagerView expenseManager = new ExpenseManagerView();
+                try {
+                    ExpenseManagerView expenseManagerView = new ExpenseManagerView();
+                    expenseManagerView.createUI(); // Ví dụ mở ứng dụng quản lý chi tiêu
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(frame, "Error opening Expense Manager: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            } else {
+                JOptionPane.showMessageDialog(frame, "Invalid username or password", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(frame, "Error connecting to the database: " + ex.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+});
+
     }
 
+
+    // Phương thức xác thực đăng nhập
+private static boolean validateLogin(String username, String password) throws SQLException {
+    // Giả sử bạn có một cơ sở dữ liệu với bảng users
+    // Kiểm tra xem tên người dùng và mật khẩu có khớp không
+    Connection connection = null;
+    PreparedStatement statement = null;
+    ResultSet resultSet = null;
     
+    try {
+        connection = DatabaseConnection.initializeDatabaze(); // Giả sử bạn đã có lớp DatabaseConnection để kết nối CSDL
+        String sql = "SELECT * FROM users WHERE username = ? AND password = ?";
+        statement = connection.prepareStatement(sql);
+        statement.setString(1, username);
+        statement.setString(2, password); // Mật khẩu đã được mã hóa hoặc chưa mã hóa tùy theo yêu cầu
+        resultSet = statement.executeQuery();
+        
+        // Nếu có dòng dữ liệu trả về, tức là người dùng và mật khẩu hợp lệ
+        return resultSet.next(); // Trả về true nếu tìm thấy người dùng
+    } finally {
+        // Đảm bảo đóng các tài nguyên
+        if (resultSet != null) resultSet.close();
+        if (statement != null) statement.close();
+        if (connection != null) connection.close();
+    }
+}
+
 private static void createAccountWindow(JFrame parentFrame) {
     JFrame signUpFrame = new JFrame("Create Account");
     signUpFrame.setSize(600, 500);
@@ -234,31 +303,32 @@ private static void createAccountWindow(JFrame parentFrame) {
     signUpFrame.add(signUpPanel);
     signUpFrame.setVisible(true);
 
-    // JTextField usernameField = new JTextField();
-    // JPasswordField passwordField = new JPasswordField();
-    // JPasswordField confirmPasswordField = new JPasswordField();
-    // JButton signUpButton = new JButton("Sign Up");
+    // Sự kiện cho nút SIGN UP
+    signUpButton.addActionListener(e -> {
+        String username = usernameField.getText();
+        String password = new String(passwordField.getPassword());
+        String confirmPassword = new String(confirmPasswordField.getPassword());
 
-    // signUpButton.addActionListener(new ModernLoginForm$2(passwordField, confirmPasswordField, signUpFrame, usernameField));
-
-
-        // Sự kiện cho nút SIGN UP
-        signUpButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                String password = new String(passwordField.getPassword());
-                String confirmPassword = new String(confirmPasswordField.getPassword());
-    
-                // Kiểm tra nếu mật khẩu và xác nhận mật khẩu khớp
-                if (password.equals(confirmPassword)) {
-                    JOptionPane.showMessageDialog(signUpFrame, "Account created successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
-                    signUpFrame.dispose();
-                } else {
-                    JOptionPane.showMessageDialog(signUpFrame, "Passwords do not match!", "Error", JOptionPane.ERROR_MESSAGE);
-                }
+        // Kiểm tra nếu mật khẩu và xác nhận mật khẩu khớp
+        if (password.equals(confirmPassword)) {
+            try {
+                // Kết nối đến cơ sở dữ liệu
+                Connection conn = DatabaseConnection.initializeDatabaze();
+                String sql = "INSERT INTO Users (username, password) VALUES (?, ?)";
+                PreparedStatement pstmt = conn.prepareStatement(sql);
+                pstmt.setString(1, username);
+                pstmt.setString(2, password);
+                pstmt.executeUpdate();
+                JOptionPane.showMessageDialog(signUpFrame, "Account created successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                signUpFrame.dispose();
+            } catch (SQLException ex) {
+                JOptionPane.showMessageDialog(signUpFrame, "Error creating account: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
-        });
+        } else {
+            JOptionPane.showMessageDialog(signUpFrame, "Passwords do not match!", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    });
     
         signUpFrame.setVisible(true);
-    }
-    
+}
 }
