@@ -10,7 +10,7 @@ public class DatabaseConnection {
 
         String dbName = "Laptrinh";
         String dbUsername = "sa";
-        String dbPassword = "486905";
+        String dbPassword = "13051980";
         String connectionURL = dbURL + ";databaseName=" + dbName + ";encrypt=true;trustServerCertificate=true";
 
         Connection conn = null;
