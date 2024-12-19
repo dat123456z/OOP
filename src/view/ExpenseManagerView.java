@@ -16,6 +16,9 @@ import model.ExpenseManagerModel;
 
 
 
+import CRUD.AddExpense;
+import CRUD.EditExpense;
+import CRUD.DeleteExpense;
 public class ExpenseManagerView {
     private JPanel mainArea; // Main Area chứa nội dung chính
     private JScrollPane tableScrollPane; // Bảng Recent Transactions
@@ -129,14 +132,39 @@ public class ExpenseManagerView {
             actionPanel.setBackground(new Color(236, 240, 241));
             actionPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-            String[] buttons = { "Add Expense", "Edit", "Delete" };
-            Color[] btnColors = { new Color(41, 128, 185), new Color(39, 174, 96), new Color(192, 57, 43) };
+
+        String[] buttons = {"Add Expense", "Edit Expense", "Delete Expense"};
+        Color[] btnColors = {new Color(41, 128, 185), new Color(39, 174, 96), new Color(192, 57, 43)};
 
             for (int i = 0; i < buttons.length; i++) {
                 JButton btn = createActionButton(buttons[i], btnColors[i]);
                 actionPanel.add(Box.createVerticalStrut(20));
                 actionPanel.add(btn);
             }
+        for (int i = 0; i < buttons.length; i++) {
+            JButton btn = new JButton(buttons[i]);
+            btn.setAlignmentX(Component.CENTER_ALIGNMENT);
+            btn.setMaximumSize(new Dimension(150, 50));
+            btn.setForeground(Color.WHITE);
+            btn.setBackground(btnColors[i]);
+            btn.setFocusPainted(false);
+            btn.setFont(new Font("Roboto", Font.BOLD, 16));
+            btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        
+            final int index = i; // Chỉ số nút
+            btn.addActionListener(e -> {
+                if (buttons[index].equals("Add Expense")) {
+                    AddExpense.AddExpense(model, conn, frame);
+                } else if (buttons[index].equals("Edit Expense")) {
+                    EditExpense.EditExpense(model, conn, frame, table);
+                } else if (buttons[index].equals("Delete Expense")) {
+                    DeleteExpense.DeleteExpense(model, conn, frame, table);
+                }
+            });
+        
+            actionPanel.add(Box.createVerticalStrut(20));
+            actionPanel.add(btn);
+        }
 
             mainArea.add(tableScrollPane, BorderLayout.CENTER);
             mainArea.add(actionPanel, BorderLayout.EAST);
