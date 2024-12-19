@@ -14,7 +14,7 @@ public class Calendar {
     public static void showExpenseCalendar(JFrame frame, Connection conn) {
         // Tạo hộp thoại hiển thị Calendar
         JDialog calendarDialog = new JDialog(frame, "Monthly Expense Calendar", true);
-        calendarDialog.setSize(900, 700);
+        calendarDialog.setSize(1000, 700);
         calendarDialog.setLayout(new BorderLayout());
 
         // Phần tiêu đề
@@ -24,7 +24,7 @@ public class Calendar {
         titleLabel.setForeground(new Color(41, 128, 185));
         headerPanel.add(titleLabel, BorderLayout.NORTH);
 
-        // Panel chọn năm và tháng
+        // Panel chọn năm, tháng và loại dữ liệu (Spending/Income)
         JPanel filterPanel = new JPanel();
         filterPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 10, 10));
 
@@ -36,6 +36,10 @@ public class Calendar {
                 "July", "August", "September", "October", "November", "December"
         });
 
+        // Lựa chọn Spending hoặc Income
+        JLabel typeLabel = new JLabel("Type:");
+        JComboBox<String> typeComboBox = new JComboBox<>(new String[]{"Spending", "Income"});
+
         // Thêm các năm từ 2020 đến năm hiện tại
         int currentYear = Year.now().getValue();
         for (int year = 2020; year <= currentYear; year++) {
@@ -46,6 +50,8 @@ public class Calendar {
         filterPanel.add(yearComboBox);
         filterPanel.add(monthLabel);
         filterPanel.add(monthComboBox);
+        filterPanel.add(typeLabel);
+        filterPanel.add(typeComboBox);
 
         headerPanel.add(filterPanel, BorderLayout.SOUTH);
         calendarDialog.add(headerPanel, BorderLayout.NORTH);
@@ -56,40 +62,50 @@ public class Calendar {
         calendarPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         calendarDialog.add(calendarPanel, BorderLayout.CENTER);
 
-        // Thêm ItemListener để cập nhật calendar khi thay đổi năm hoặc tháng
+        // Thêm ItemListener để cập nhật calendar khi thay đổi năm, tháng hoặc loại dữ liệu
         yearComboBox.addItemListener(e -> {
             if (e.getStateChange() == java.awt.event.ItemEvent.SELECTED) {
-                int selectedYear = (int) yearComboBox.getSelectedItem();
-                int selectedMonth = monthComboBox.getSelectedIndex() + 1;
-                updateCalendar(calendarPanel, conn, selectedYear, selectedMonth, frame);
+                updateCalendar(calendarPanel, conn, yearComboBox, monthComboBox, typeComboBox, frame);
             }
         });
 
         monthComboBox.addItemListener(e -> {
             if (e.getStateChange() == java.awt.event.ItemEvent.SELECTED) {
-                int selectedYear = (int) yearComboBox.getSelectedItem();
-                int selectedMonth = monthComboBox.getSelectedIndex() + 1;
-                updateCalendar(calendarPanel, conn, selectedYear, selectedMonth, frame);
+                updateCalendar(calendarPanel, conn, yearComboBox, monthComboBox, typeComboBox, frame);
             }
         });
 
-        // Hiển thị giao diện lần đầu với tháng hiện tại
+        typeComboBox.addItemListener(e -> {
+            if (e.getStateChange() == java.awt.event.ItemEvent.SELECTED) {
+                updateCalendar(calendarPanel, conn, yearComboBox, monthComboBox, typeComboBox, frame);
+            }
+        });
+
+        // Hiển thị giao diện lần đầu với tháng hiện tại và "Spending"
         yearComboBox.setSelectedItem(currentYear);
         monthComboBox.setSelectedIndex(java.time.LocalDate.now().getMonthValue() - 1);
-        updateCalendar(calendarPanel, conn, currentYear, java.time.LocalDate.now().getMonthValue(), frame);
+        typeComboBox.setSelectedIndex(0); // Mặc định là "Spending"
+        updateCalendar(calendarPanel, conn, yearComboBox, monthComboBox, typeComboBox, frame);
 
         calendarDialog.setLocationRelativeTo(frame);
         calendarDialog.setVisible(true);
     }
 
-    private static void updateCalendar(JPanel calendarPanel, Connection conn, int year, int month, JFrame frame) {
+    private static void updateCalendar(JPanel calendarPanel, Connection conn, JComboBox<Integer> yearComboBox,
+                                       JComboBox<String> monthComboBox, JComboBox<String> typeComboBox, JFrame frame) {
         calendarPanel.removeAll(); // Xóa nội dung cũ
 
-        // Lấy dữ liệu chi tiêu từ cơ sở dữ liệu
+        int year = (int) yearComboBox.getSelectedItem();
+        int month = monthComboBox.getSelectedIndex() + 1;
+        String type = (String) typeComboBox.getSelectedItem();
+
+        // Lấy dữ liệu chi tiêu hoặc thu nhập từ cơ sở dữ liệu
         List<String[]> expenseData = new ArrayList<>();
         try {
             String query = "SELECT date, SUM(amount) AS total FROM expenses " +
-                    "WHERE YEAR(date) = ? AND MONTH(date) = ? GROUP BY date ORDER BY date ASC";
+                    "WHERE YEAR(date) = ? AND MONTH(date) = ? AND amount " +
+                    (type.equals("Spending") ? "< 0" : "> 0") +
+                    " GROUP BY date ORDER BY date ASC";
             try (PreparedStatement pstmt = conn.prepareStatement(query)) {
                 pstmt.setInt(1, year);
                 pstmt.setInt(2, month);
@@ -117,14 +133,14 @@ public class Calendar {
 
             JButton dayButton = new JButton("<html><center>" + day + "<br>" + expense + "</center></html>");
             dayButton.setFont(new Font("Roboto", Font.PLAIN, 15));
-            dayButton.setBackground(expense.isEmpty() ? Color.LIGHT_GRAY : new Color(52, 152, 219));
+            dayButton.setBackground(expense.isEmpty() ? Color.LIGHT_GRAY : (type.equals("Spending") ? Color.RED : Color.GREEN));
             dayButton.setForeground(expense.isEmpty() ? Color.BLACK : Color.WHITE);
             dayButton.setFocusPainted(false);
 
             final int finalDay = day;
             final String finalExpense = expense;
             dayButton.addActionListener(e -> JOptionPane.showMessageDialog(frame,
-                    "Details for day " + finalDay + ": " + (finalExpense.isEmpty() ? "No expenses" : finalExpense)));
+                    "Details for day " + finalDay + ": " + (finalExpense.isEmpty() ? "No data" : finalExpense)));
 
             calendarPanel.add(dayButton);
         }
