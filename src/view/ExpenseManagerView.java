@@ -3,12 +3,14 @@ package view;
 import CRUD.AddExpense;
 import CRUD.DeleteExpense;
 import CRUD.EditExpense;
+import CRUD.Calendar;
 import java.awt.*;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
 import javax.swing.*;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import model.ExpenseManagerModel;
 public class ExpenseManagerView {
@@ -45,8 +47,8 @@ public class ExpenseManagerView {
         sidePanel.setBackground(new Color(44, 62, 80));
         sidePanel.setPreferredSize(new Dimension(220, 750));
 
-        String[] menuItems = { "Home", "Dashboard", "Expenses", "Analytics", "Calendar", "Categories", "Settings" };
-        String[] icons = { "\uD83C\uDFE0", "\uD83D\uDCCA", "\uD83D\uDCB8", "\uD83D\uDCCA", "\uD83D\uDCC5", "\uD83D\uDDC3",
+        String[] menuItems = { "Home", "Dashboard", "Expense analytics", "Income analytics","Calendar", "Settings" };
+        String[] icons = { "\uD83C\uDFE0", "\uD83D\uDCCA", "\uD83D\uDCCA", "\uD83D\uDCCA", "\uD83D\uDCC5", "\uD83D\uDDC3",
                 "\u2699" };
 
         mainArea = new JPanel(new BorderLayout());
@@ -64,19 +66,29 @@ public class ExpenseManagerView {
                 } else if (menu.equals("Dashboard")) {
                     mainArea.add(new DashboardPanel(conn), BorderLayout.CENTER);
                 }
-                else if (menu.equals("Analytics")) {
-                    
-                        AnalyticsPanel analyticsPanel = new AnalyticsPanel(conn, mainArea);
-                    
-                        mainArea.removeAll(); // Xóa nội dung cũ
-                        mainArea.add(analyticsPanel, BorderLayout.CENTER); // Thêm panel vào mainArea
-                        mainArea.revalidate();
-                        mainArea.repaint();
-                    
-                        analyticsPanel.showAnalyticsOptions(); // Gọi showAnalyticsOptions sau khi đã hiển thị
-                    
-                    
-                    
+                else if (menu.equals("Expense analytics")) {
+                    AnalyticsPanel analyticsPanel = new AnalyticsPanel(conn, mainArea);
+                
+                    mainArea.removeAll(); // Xóa nội dung cũ
+                    mainArea.add(analyticsPanel, BorderLayout.CENTER); // Thêm panel vào mainArea
+                    mainArea.revalidate();
+                    mainArea.repaint();
+                
+                    analyticsPanel.showAnalyticsOptions(); // Gọi showAnalyticsOptions sau khi đã hiển thị 
+                }
+                else if (menu.equals("Income analytics")) {
+                    IncomeAnalyticsPanel incomeAnalyticsPanel = new IncomeAnalyticsPanel(conn, mainArea);
+                
+                    mainArea.removeAll(); // Xóa nội dung cũ
+                    mainArea.add(incomeAnalyticsPanel, BorderLayout.CENTER); // Thêm panel vào mainArea
+                    mainArea.revalidate();
+                    mainArea.repaint();
+                
+                    incomeAnalyticsPanel.showIncomeAnalyticsOptions(); // Gọi phương thức hiển thị của IncomeAnalyticsPanel
+                }
+                
+                else if (menu.equals("Calendar")) { // Logic cho Calendar
+                    Calendar.showExpenseCalendar(frame, conn);
                 }
                 else  {
                     mainArea.add(new JLabel("Feature: " + menu, SwingConstants.CENTER), BorderLayout.CENTER);
@@ -116,6 +128,27 @@ public class ExpenseManagerView {
             table.getTableHeader().setBackground(new Color(52, 73, 94));
             table.getTableHeader().setForeground(Color.WHITE);
     
+            // Renderer cho Amount
+            DefaultTableCellRenderer amountRenderer = new DefaultTableCellRenderer() {
+                @Override
+                public void setValue(Object value) {
+                    if (value != null) {
+                        double amount = Double.parseDouble(value.toString());
+                        setForeground(amount < 0 ? Color.RED : new Color(39, 174, 96));
+                    }
+                    setHorizontalAlignment(SwingConstants.CENTER);
+                    super.setValue(value);
+                }
+            };
+            table.getColumnModel().getColumn(3).setCellRenderer(amountRenderer);
+        
+            // Căn giữa các cột còn lại
+            DefaultTableCellRenderer alignCenterRenderer = new DefaultTableCellRenderer();
+            alignCenterRenderer.setHorizontalAlignment(SwingConstants.CENTER);
+            for (int i = 0; i < table.getColumnCount(); i++) {
+                if (i != 3) table.getColumnModel().getColumn(i).setCellRenderer(alignCenterRenderer);
+            }
+
             tableScrollPane = new JScrollPane(table);
             tableScrollPane.setBorder(BorderFactory.createTitledBorder("Recent Transactions"));
     

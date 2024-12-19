@@ -14,7 +14,7 @@ public class DashboardPanel extends JPanel {
     public DashboardPanel(Connection conn) {
         this.conn = conn;
         setLayout(new BorderLayout());
-        
+
         // Thêm Dashboard Panel vào giao diện
         add(createDashboardPanel(), BorderLayout.CENTER);
     }
@@ -46,7 +46,7 @@ public class DashboardPanel extends JPanel {
 
         // Bảng để hiển thị dữ liệu thống kê
         String[] columnNames = {"Summary", "Value"};
-        DefaultTableModel tableModel = new DefaultTableModel(new Object[4][2], columnNames);
+        DefaultTableModel tableModel = new DefaultTableModel(new Object[6][2], columnNames);
         JTable table = new JTable(tableModel);
         table.setRowHeight(30);
         table.setFont(new Font("Roboto", Font.PLAIN, 14));
@@ -74,8 +74,11 @@ public class DashboardPanel extends JPanel {
     // Hàm riêng để tải dữ liệu
     private void loadData(DefaultTableModel tableModel, int month, int year, JComboBox<String> monthComboBox) {
         try {
-            // Truy vấn dữ liệu cho tháng được chọn
-            String query = "SELECT SUM(amount) AS totalSpent, COUNT(*) AS transactions " +
+            // Truy vấn dữ liệu chi tiêu, thu nhập và số giao dịch trong tháng được chọn
+            String query = "SELECT " +
+                    "SUM(CASE WHEN amount < 0 THEN amount ELSE 0 END) AS totalSpent, " +
+                    "SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END) AS totalReceived, " +
+                    "COUNT(*) AS transactions " +
                     "FROM expenses WHERE MONTH(date) = ? AND YEAR(date) = ?";
             PreparedStatement ps = conn.prepareStatement(query);
             ps.setInt(1, month);
@@ -83,26 +86,35 @@ public class DashboardPanel extends JPanel {
             ResultSet rs = ps.executeQuery();
 
             if (rs.next()) {
-                tableModel.setValueAt("Total Spent in " + monthComboBox.getSelectedItem(), 0, 0);
+                tableModel.setValueAt("Spent in " + monthComboBox.getSelectedItem(), 0, 0);
                 tableModel.setValueAt(rs.getDouble("totalSpent") + " VND", 0, 1);
 
-                tableModel.setValueAt("Transactions in " + monthComboBox.getSelectedItem(), 1, 0);
-                tableModel.setValueAt(rs.getInt("transactions"), 1, 1);
+                tableModel.setValueAt("Received in " + monthComboBox.getSelectedItem(), 1, 0);
+                tableModel.setValueAt(rs.getDouble("totalReceived") + " VND", 1, 1);
+
+                tableModel.setValueAt("Transactions in " + monthComboBox.getSelectedItem(), 2, 0);
+                tableModel.setValueAt(rs.getInt("transactions"), 2, 1);
             }
 
-            // Truy vấn dữ liệu cho năm được chọn
-            String queryYear = "SELECT SUM(amount) AS totalSpent, COUNT(*) AS transactions " +
+            // Truy vấn dữ liệu chi tiêu, thu nhập và số giao dịch trong năm được chọn
+            String queryYear = "SELECT " +
+                    "SUM(CASE WHEN amount < 0 THEN amount ELSE 0 END) AS totalSpent, " +
+                    "SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END) AS totalReceived, " +
+                    "COUNT(*) AS transactions " +
                     "FROM expenses WHERE YEAR(date) = ?";
             PreparedStatement psYear = conn.prepareStatement(queryYear);
             psYear.setInt(1, year);
             ResultSet rsYear = psYear.executeQuery();
 
             if (rsYear.next()) {
-                tableModel.setValueAt("Total Spent This Year", 2, 0);
-                tableModel.setValueAt(rsYear.getDouble("totalSpent") + " VND", 2, 1);
+                tableModel.setValueAt("Spent This Year", 3, 0);
+                tableModel.setValueAt(rsYear.getDouble("totalSpent") + " VND", 3, 1);
 
-                tableModel.setValueAt("Transactions This Year", 3, 0);
-                tableModel.setValueAt(rsYear.getInt("transactions"), 3, 1);
+                tableModel.setValueAt("Received This Year", 4, 0);
+                tableModel.setValueAt(rsYear.getDouble("totalReceived") + " VND", 4, 1);
+
+                tableModel.setValueAt("Transactions This Year", 5, 0);
+                tableModel.setValueAt(rsYear.getInt("transactions"), 5, 1);
             }
 
             // Làm mới bảng

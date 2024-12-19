@@ -22,28 +22,28 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class AnalyticsPanel extends JPanel {
+public class IncomeAnalyticsPanel extends JPanel {
     private Connection conn;
     private JPanel mainArea;
 
-    public AnalyticsPanel(Connection conn, JPanel mainArea) {
+    public IncomeAnalyticsPanel(Connection conn, JPanel mainArea) {
         this.conn = conn;
         this.mainArea = mainArea;
         setLayout(new BorderLayout());
     }
 
-    // Hiển thị tùy chọn phân tích
-    public void showAnalyticsOptions() {
+    // Hiển thị tùy chọn phân tích khoản thu
+    public void showIncomeAnalyticsOptions() {
         // Bước 1: Chọn năm từ cơ sở dữ liệu
         Integer selectedYear = selectYearFromDatabase();
         if (selectedYear == null) return; // Nếu không chọn năm, thoát
 
-        // Bước 2: Chọn loại biểu đồ (theo tháng hoặc cả năm)
+        // Bước 2: Chọn loại hiển thị (Monthly hoặc Yearly)
         String[] options = {"Monthly", "Yearly"};
         int choice = JOptionPane.showOptionDialog(
                 null,
                 "Do you want to view the chart by month or year?",
-                "Analytics Options",
+                "Income Analytics Options",
                 JOptionPane.DEFAULT_OPTION,
                 JOptionPane.INFORMATION_MESSAGE,
                 null,
@@ -55,11 +55,11 @@ public class AnalyticsPanel extends JPanel {
             // Nếu chọn Monthly, yêu cầu nhập tháng
             String month = JOptionPane.showInputDialog(null, "Enter a month (1-12):", "Select Month", JOptionPane.PLAIN_MESSAGE);
             if (month != null && isValidMonth(month)) {
-                createChart("month", Integer.parseInt(month), selectedYear);
+                createIncomeChart("month", Integer.parseInt(month), selectedYear);
             }
         } else if (choice == 1) {
             // Nếu chọn Yearly, hiển thị biểu đồ cả năm
-            createChart("year", 0, selectedYear); // 0 đại diện cho tất cả các tháng trong năm
+            createIncomeChart("year", 0, selectedYear); // 0 đại diện cho tất cả các tháng trong năm
         }
     }
 
@@ -96,20 +96,20 @@ public class AnalyticsPanel extends JPanel {
         }
     }
 
-    private void createChart(String type, int month, int year) {
+    private void createIncomeChart(String type, int month, int year) {
         try {
             String query;
             if (type.equals("month")) {
                 query = "SELECT category, SUM(amount) AS total " +
-                        "FROM expenses WHERE YEAR(date) = ? AND MONTH(date) = ? AND amount < 0 GROUP BY category";
-            } else { // type.equals("year")
+                        "FROM expenses WHERE YEAR(date) = ? AND MONTH(date) = ? AND amount > 0 GROUP BY category";
+            } else {
                 query = "SELECT category, SUM(amount) AS total " +
-                        "FROM expenses WHERE YEAR(date) = ? AND amount < 0 GROUP BY category";
+                        "FROM expenses WHERE YEAR(date) = ? AND amount > 0 GROUP BY category";
             }
 
             PreparedStatement pstmt = conn.prepareStatement(query);
             pstmt.setInt(1, year);
-            if (type.equals("month")) pstmt.setInt(2, month); // Thêm tháng nếu cần
+            if (type.equals("month")) pstmt.setInt(2, month);
 
             ResultSet rs = pstmt.executeQuery();
 
@@ -117,19 +117,24 @@ public class AnalyticsPanel extends JPanel {
 
             while (rs.next()) {
                 String category = rs.getString("category");
-                double total = Math.abs(rs.getDouble("total")); // Lấy giá trị tuyệt đối
+                double total = rs.getDouble("total"); // Lấy giá trị dương (không cần tuyệt đối)
                 dataset.setValue(category, total);
             }
 
+            if (dataset.getItemCount() == 0) {
+                JOptionPane.showMessageDialog(null, "No data available for the selected period.", "No Data", JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+
             String title = type.equals("month")
-                    ? "Expenses for Month " + month + " in Year " + year
-                    : "Expenses for Year " + year;
+                    ? "Income for Month " + month + " in Year " + year
+                    : "Income for Year " + year;
 
             // Tạo biểu đồ tròn
             JFreeChart pieChart = ChartFactory.createPieChart(
                     title,
                     dataset,
-                    false,
+                    true,
                     true,
                     false
             );
@@ -164,10 +169,10 @@ public class AnalyticsPanel extends JPanel {
             plot.setLabelShadowPaint(null);
 
             List<Color> colors = new ArrayList<>(Arrays.asList(
-                    new Color(0xDC8665), new Color(0x138086), new Color(0x534666),
-                    new Color(0xF9C449), new Color(0x3C4CAD), new Color(0x536976),
-                    new Color(0xC31432), new Color(0x297B8F), new Color(0x6F4F61), new Color(0xF2B500),
-                    new Color(0x4F6D9B), new Color(0x607D8B), new Color(0xD14032), new Color(0x9E5D47)
+                new Color(0xC31432), new Color(0xF9C449), new Color(0x138086),
+                new Color(0xF2B500), new Color(0x3C4CAD), new Color(0xDC8665), new Color(0x6F4F61),
+                new Color(0x607D8B), new Color(0xD14032), new Color(0x297B8F), new Color(0x4F6D9B),
+                new Color(0x9E5D47), new Color(0x534666), new Color(0x536976)
             ));
 
             int colorIndex = 0;
@@ -178,11 +183,9 @@ public class AnalyticsPanel extends JPanel {
             }
 
             // Tùy chỉnh Chú thích (Legend)
-            LegendTitle legend = new LegendTitle(plot);
+            LegendTitle legend = pieChart.getLegend();
             legend.setItemFont(new Font("Roboto", Font.BOLD, 16));
             legend.setPosition(RectangleEdge.RIGHT);
-
-            pieChart.addLegend(legend);
 
             // Hiển thị biểu đồ trong JPanel
             ChartPanel chartPanel = new ChartPanel(pieChart);
