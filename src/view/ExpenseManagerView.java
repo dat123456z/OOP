@@ -1,5 +1,8 @@
 package view;
 
+import CRUD.AddExpense;
+import CRUD.DeleteExpense;
+import CRUD.EditExpense;
 import java.awt.*;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -8,31 +11,21 @@ import java.util.List;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import model.ExpenseManagerModel;
-
-
-
-
-
-
-
-
-import CRUD.AddExpense;
-import CRUD.EditExpense;
-import CRUD.DeleteExpense;
 public class ExpenseManagerView {
     private JPanel mainArea; // Main Area chứa nội dung chính
     private JScrollPane tableScrollPane; // Bảng Recent Transactions
     private JPanel actionPanel; // Panel chứa các nút chức năng
     private DefaultTableModel model; // Table Model dùng để cập nhật dữ liệu
     private Connection conn; // Kết nối CSDL
-   
+    private JFrame frame;
+
     
 
     public void createUI() throws SQLException {
         // Kết nối CSDL
         conn = SQLConnection.getSQLServerConnection();
 
-        JFrame frame = new JFrame("Expense Tracker");
+        frame = new JFrame("Expense Tracker");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(1200, 800);
         frame.setLayout(new BorderLayout());
@@ -107,72 +100,67 @@ public class ExpenseManagerView {
     private void createRecentTransactionsPanel() {
         try {
             List<ExpenseManagerModel> expenseList = DBUTills.getExpenses(conn);
-
+    
             String[] columnNames = { "Category", "Description", "Date", "Amount" };
             model = new DefaultTableModel(columnNames, 0);
-
+    
             for (ExpenseManagerModel expense : expenseList) {
                 model.addRow(new Object[] { expense.getCategory(), expense.getDescription(), expense.getDate(),
                         expense.getAmount() });
             }
-
+    
             JTable table = new JTable(model);
             table.setRowHeight(30);
             table.setFont(new Font("Roboto", Font.PLAIN, 14));
             table.getTableHeader().setFont(new Font("Roboto", Font.BOLD, 14));
             table.getTableHeader().setBackground(new Color(52, 73, 94));
             table.getTableHeader().setForeground(Color.WHITE);
-
+    
             tableScrollPane = new JScrollPane(table);
             tableScrollPane.setBorder(BorderFactory.createTitledBorder("Recent Transactions"));
-
+    
             // Tạo Action Panel
             actionPanel = new JPanel();
             actionPanel.setLayout(new BoxLayout(actionPanel, BoxLayout.Y_AXIS));
             actionPanel.setBackground(new Color(236, 240, 241));
             actionPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-
-
-        String[] buttons = {"Add Expense", "Edit Expense", "Delete Expense"};
-        Color[] btnColors = {new Color(41, 128, 185), new Color(39, 174, 96), new Color(192, 57, 43)};
-
+    
+            String[] buttons = {"Add Expense", "Edit Expense", "Delete Expense"};
+            Color[] btnColors = {new Color(41, 128, 185), new Color(39, 174, 96), new Color(192, 57, 43)};
+    
             for (int i = 0; i < buttons.length; i++) {
-                JButton btn = createActionButton(buttons[i], btnColors[i]);
+                JButton btn = new JButton(buttons[i]);
+                btn.setAlignmentX(Component.CENTER_ALIGNMENT);
+                btn.setMaximumSize(new Dimension(150, 50));
+                btn.setForeground(Color.WHITE);
+                btn.setBackground(btnColors[i]);
+                btn.setFocusPainted(false);
+                btn.setFont(new Font("Roboto", Font.BOLD, 16));
+                btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+    
+                final int index = i; // Chỉ số nút
+                btn.addActionListener(e -> {
+                    if (buttons[index].equals("Add Expense")) {
+                        AddExpense.AddExpense(model, conn, frame);
+                    } else if (buttons[index].equals("Edit Expense")) {
+                        EditExpense.EditExpense(model, conn, frame, table);
+                    } else if (buttons[index].equals("Delete Expense")) {
+                        DeleteExpense.DeleteExpense(model, conn, frame, table);
+                    }
+                });
+    
                 actionPanel.add(Box.createVerticalStrut(20));
                 actionPanel.add(btn);
             }
-        for (int i = 0; i < buttons.length; i++) {
-            JButton btn = new JButton(buttons[i]);
-            btn.setAlignmentX(Component.CENTER_ALIGNMENT);
-            btn.setMaximumSize(new Dimension(150, 50));
-            btn.setForeground(Color.WHITE);
-            btn.setBackground(btnColors[i]);
-            btn.setFocusPainted(false);
-            btn.setFont(new Font("Roboto", Font.BOLD, 16));
-            btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        
-            final int index = i; // Chỉ số nút
-            btn.addActionListener(e -> {
-                if (buttons[index].equals("Add Expense")) {
-                    AddExpense.AddExpense(model, conn, frame);
-                } else if (buttons[index].equals("Edit Expense")) {
-                    EditExpense.EditExpense(model, conn, frame, table);
-                } else if (buttons[index].equals("Delete Expense")) {
-                    DeleteExpense.DeleteExpense(model, conn, frame, table);
-                }
-            });
-        
-            actionPanel.add(Box.createVerticalStrut(20));
-            actionPanel.add(btn);
-        }
-
+    
             mainArea.add(tableScrollPane, BorderLayout.CENTER);
             mainArea.add(actionPanel, BorderLayout.EAST);
-
+    
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
+    
 
     // Tạo nút menu
     private JButton createMenuButton(String text, String icon) {
