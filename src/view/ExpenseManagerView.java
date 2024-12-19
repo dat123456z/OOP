@@ -3,6 +3,7 @@ package view;
 import CRUD.AddExpense;
 import CRUD.DeleteExpense;
 import CRUD.EditExpense;
+import CRUD.Calendar;
 import java.awt.*;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -74,8 +75,8 @@ public class ExpenseManagerView {
         sidePanel.setPreferredSize(new Dimension(220, 750));
 
         String[] menuItems = { "Home", "Dashboard", "Expense analytics", "Income analytics","Calendar", "Settings" };
-        String[] icons = { "\uD83C\uDFE0", "\uD83D\uDCCA", "\uD83D\uDCCA", "\uD83D\uDCCA", "\uD83D\uDCC5", "\uD83D\uDDC3"};
-
+        String[] icons = { "\uD83C\uDFE0", "\uD83D\uDCCA", "\uD83D\uDCCA", "\uD83D\uDCCA", "\uD83D\uDCC5", "\uD83D\uDDC3",
+                "\u2699" };
 
         mainArea = new JPanel(new BorderLayout());
         createRecentTransactionsPanel(); // Hiển thị bảng Recent Transactions mặc định
@@ -91,22 +92,32 @@ public class ExpenseManagerView {
                     createRecentTransactionsPanel();
                 } else if (menu.equals("Dashboard")) {
                     mainArea.add(new DashboardPanel(conn), BorderLayout.CENTER);
+                } else if (menu.equals("Dashboard")) {
+                    mainArea.add(new DashboardPanel(conn), BorderLayout.CENTER);
                 }
-                else if (menu.equals("Analytics")) {
-                    
-                        AnalyticsPanel analyticsPanel = new AnalyticsPanel(conn, mainArea);
-                    
-                        mainArea.removeAll(); // Xóa nội dung cũ
-                        mainArea.add(analyticsPanel, BorderLayout.CENTER); // Thêm panel vào mainArea
-                        mainArea.revalidate();
-                        mainArea.repaint();
-                    
-                        analyticsPanel.showAnalyticsOptions(); // Gọi showAnalyticsOptions sau khi đã hiển thị
-                    
-                    
-                    
+                else if (menu.equals("Expense analytics")) {
+                    AnalyticsPanel analyticsPanel = new AnalyticsPanel(conn, mainArea);
+                
+                    mainArea.removeAll(); // Xóa nội dung cũ
+                    mainArea.add(analyticsPanel, BorderLayout.CENTER); // Thêm panel vào mainArea
+                    mainArea.revalidate();
+                    mainArea.repaint();
+                
+                    analyticsPanel.showAnalyticsOptions(); // Gọi showAnalyticsOptions sau khi đã hiển thị 
                 }
-                else  {
+                else if (menu.equals("Income analytics")) {
+                    IncomeAnalyticsPanel incomeAnalyticsPanel = new IncomeAnalyticsPanel(conn, mainArea);
+                
+                    mainArea.removeAll(); // Xóa nội dung cũ
+                    mainArea.add(incomeAnalyticsPanel, BorderLayout.CENTER); // Thêm panel vào mainArea
+                    mainArea.revalidate();
+                    mainArea.repaint();
+                
+                    incomeAnalyticsPanel.showIncomeAnalyticsOptions(); // Gọi phương thức hiển thị của IncomeAnalyticsPanel
+                }
+                 else if (menu.equals("Calendar")) { // Logic cho Calendar
+                    Calendar.showExpenseCalendar(frame, conn);
+                } else {
                     mainArea.add(new JLabel("Feature: " + menu, SwingConstants.CENTER), BorderLayout.CENTER);
                 }
                 mainArea.revalidate();
@@ -128,15 +139,15 @@ public class ExpenseManagerView {
     private void createRecentTransactionsPanel() {
         try {
             List<ExpenseManagerModel> expenseList = DBUTills.getExpenses(conn);
-    
+
             String[] columnNames = { "Category", "Description", "Date", "Amount" };
             model = new DefaultTableModel(columnNames, 0);
-    
+
             for (ExpenseManagerModel expense : expenseList) {
                 model.addRow(new Object[] { expense.getCategory(), expense.getDescription(), expense.getDate(),
                         expense.getAmount() });
             }
-    
+
             JTable table = new JTable(model);
             table.setRowHeight(30);
             table.setFont(new Font("Roboto", Font.PLAIN, 14));
@@ -168,7 +179,7 @@ public class ExpenseManagerView {
 
             tableScrollPane = new JScrollPane(table);
             tableScrollPane.setBorder(BorderFactory.createTitledBorder("Recent Transactions"));
-    
+
             // Tạo Action Panel
             actionPanel = new JPanel();
             actionPanel.setLayout(new BoxLayout(actionPanel, BoxLayout.Y_AXIS));
@@ -205,12 +216,11 @@ public class ExpenseManagerView {
 
             mainArea.add(tableScrollPane, BorderLayout.CENTER);
             mainArea.add(actionPanel, BorderLayout.EAST);
-    
+
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
-    
 
     // Tạo nút menu
     private JButton createMenuButton(String text, String icon) {

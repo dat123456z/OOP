@@ -1,9 +1,9 @@
 package CRUD;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 
 public class EditExpense {
     public static void EditExpense(DefaultTableModel model, Connection conn, JFrame frame, JTable table,
