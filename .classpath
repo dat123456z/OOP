@@ -2,6 +2,12 @@
 <classpath>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="src" path="src"/>
+<<<<<<< HEAD
+=======
+
+	<!-- <classpathentry kind="src" path="_view/..."/> -->
+
+>>>>>>> 0005f9c68081e998eea130701fd923fa3986fd5e
 	<classpathentry kind="lib" path="lib/mssql-jdbc-12.8.0.jre11.jar"/>
 	<classpathentry kind="lib" path="lib/jfreechart-1.5.3.jar"/>
 	<classpathentry kind="output" path="bin"/>
