@@ -110,7 +110,7 @@ public class Calendar {
             String expense = "";
             for (String[] data : expenseData) {
                 if (data[0].endsWith("-" + (day < 10 ? "0" : "") + day)) {
-                    expense = "Total: " + data[1];
+                    expense = data[1];
                     break;
                 }
             }
