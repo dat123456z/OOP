@@ -1,5 +1,9 @@
 package view;
 
+import CRUD.AddExpense;
+import CRUD.DeleteExpense;
+import CRUD.EditExpense;
+import CRUD.Calendar;
 import java.awt.*;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -9,30 +13,20 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import model.ExpenseManagerModel;
 
-
-
-
-
-
-
-
-import CRUD.AddExpense;
-import CRUD.EditExpense;
-import CRUD.DeleteExpense;
 public class ExpenseManagerView {
     private JPanel mainArea; // Main Area chứa nội dung chính
     private JScrollPane tableScrollPane; // Bảng Recent Transactions
     private JPanel actionPanel; // Panel chứa các nút chức năng
     private DefaultTableModel model; // Table Model dùng để cập nhật dữ liệu
     private Connection conn; // Kết nối CSDL
-   
-    
+    private JFrame frame;
+    private JTextField propertyField;
 
     public void createUI() throws SQLException {
         // Kết nối CSDL
         conn = SQLConnection.getSQLServerConnection();
 
-        JFrame frame = new JFrame("Expense Tracker");
+        frame = new JFrame("Expense Tracker");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(1200, 800);
         frame.setLayout(new BorderLayout());
@@ -46,14 +40,42 @@ public class ExpenseManagerView {
         appTitle.setFont(new Font("Roboto", Font.BOLD, 28));
         headerPanel.add(appTitle, BorderLayout.WEST);
 
+        // Tài sản ("Property")
+        propertyField = new JTextField("Property: 0.00"); // Kết hợp cả "Property:" và số tiền
+        propertyField.setForeground(Color.WHITE);
+        propertyField.setFont(new Font("Roboto", Font.PLAIN, 18));
+        propertyField.setBackground(new Color(41, 128, 185)); // Giữ màu nền giống header
+        propertyField.setHorizontalAlignment(SwingConstants.RIGHT); // Căn phải
+        propertyField.setBorder(BorderFactory.createEmptyBorder()); // Loại bỏ viền
+        headerPanel.add(propertyField, BorderLayout.EAST);
+        propertyField.setPreferredSize(new Dimension(200, 30)); // Tăng kích thước chiều rộng
+
+
+        // Lấy giá trị "Property" từ CSDL và hiển thị
+        updatePropertyField();
+        propertyField.addActionListener(e -> {
+            try {
+                // Loại bỏ chữ "Property:" trước khi chuyển đổi sang số
+                String text = propertyField.getText().replace("Property: ", "").trim();
+                double newProperty = Double.parseDouble(text);
+                updatePropertyInDatabase(newProperty);
+                JOptionPane.showMessageDialog(frame, "Property updated successfully!");
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(frame, "Invalid number format. Please enter a valid number.", "Error",
+                        JOptionPane.ERROR_MESSAGE);
+                updatePropertyField(); // Khôi phục giá trị cũ nếu lỗi
+            }
+        });
+
         // Menu bên trái
         JPanel sidePanel = new JPanel();
         sidePanel.setLayout(new BoxLayout(sidePanel, BoxLayout.Y_AXIS));
         sidePanel.setBackground(new Color(44, 62, 80));
         sidePanel.setPreferredSize(new Dimension(220, 750));
 
-        String[] menuItems = { "Home", "Dashboard", "Expenses", "Analytics", "Calendar", "Categories", "Settings" };
-        String[] icons = { "\uD83C\uDFE0", "\uD83D\uDCCA", "\uD83D\uDCB8", "\uD83D\uDCCA", "\uD83D\uDCC5", "\uD83D\uDDC3",
+        String[] menuItems = { "Home", "Dashboard", "Analytics", "Calendar", "Settings" };
+        String[] icons = { "\uD83C\uDFE0", "\uD83D\uDCCA", "\uD83D\uDCB8", "\uD83D\uDCCA", "\uD83D\uDCC5",
+                "\uD83D\uDDC3",
                 "\u2699" };
 
         mainArea = new JPanel(new BorderLayout());
@@ -70,22 +92,18 @@ public class ExpenseManagerView {
                     createRecentTransactionsPanel();
                 } else if (menu.equals("Dashboard")) {
                     mainArea.add(new DashboardPanel(conn), BorderLayout.CENTER);
-                }
-                else if (menu.equals("Analytics")) {
-                    
-                        AnalyticsPanel analyticsPanel = new AnalyticsPanel(conn, mainArea);
-                    
-                        mainArea.removeAll(); // Xóa nội dung cũ
-                        mainArea.add(analyticsPanel, BorderLayout.CENTER); // Thêm panel vào mainArea
-                        mainArea.revalidate();
-                        mainArea.repaint();
-                    
-                        analyticsPanel.showAnalyticsOptions(); // Gọi showAnalyticsOptions sau khi đã hiển thị
-                    
-                    
-                    
-                }
-                else  {
+                } else if (menu.equals("Analytics")) {
+                    AnalyticsPanel analyticsPanel = new AnalyticsPanel(conn, mainArea);
+
+                    mainArea.removeAll(); // Xóa nội dung cũ
+                    mainArea.add(analyticsPanel, BorderLayout.CENTER); // Thêm panel vào mainArea
+                    mainArea.revalidate();
+                    mainArea.repaint();
+
+                    analyticsPanel.showAnalyticsOptions(); // Gọi showAnalyticsOptions sau khi đã hiển thị
+                } else if (menu.equals("Calendar")) { // Logic cho Calendar
+                    Calendar.showExpenseCalendar(frame, conn);
+                } else {
                     mainArea.add(new JLabel("Feature: " + menu, SwingConstants.CENTER), BorderLayout.CENTER);
                 }
                 mainArea.revalidate();
@@ -123,6 +141,28 @@ public class ExpenseManagerView {
             table.getTableHeader().setBackground(new Color(52, 73, 94));
             table.getTableHeader().setForeground(Color.WHITE);
 
+            // Renderer cho Amount
+            DefaultTableCellRenderer amountRenderer = new DefaultTableCellRenderer() {
+                @Override
+                public void setValue(Object value) {
+                    if (value != null) {
+                        double amount = Double.parseDouble(value.toString());
+                        setForeground(amount < 0 ? Color.RED : new Color(39, 174, 96));
+                    }
+                    setHorizontalAlignment(SwingConstants.CENTER);
+                    super.setValue(value);
+                }
+            };
+            table.getColumnModel().getColumn(3).setCellRenderer(amountRenderer);
+
+            // Căn giữa các cột còn lại
+            DefaultTableCellRenderer alignCenterRenderer = new DefaultTableCellRenderer();
+            alignCenterRenderer.setHorizontalAlignment(SwingConstants.CENTER);
+            for (int i = 0; i < table.getColumnCount(); i++) {
+                if (i != 3)
+                    table.getColumnModel().getColumn(i).setCellRenderer(alignCenterRenderer);
+            }
+
             tableScrollPane = new JScrollPane(table);
             tableScrollPane.setBorder(BorderFactory.createTitledBorder("Recent Transactions"));
 
@@ -132,39 +172,33 @@ public class ExpenseManagerView {
             actionPanel.setBackground(new Color(236, 240, 241));
             actionPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-
-        String[] buttons = {"Add Expense", "Edit Expense", "Delete Expense"};
-        Color[] btnColors = {new Color(41, 128, 185), new Color(39, 174, 96), new Color(192, 57, 43)};
+            String[] buttons = { "Add Expense", "Edit Expense", "Delete Expense" };
+            Color[] btnColors = { new Color(41, 128, 185), new Color(39, 174, 96), new Color(192, 57, 43) };
 
             for (int i = 0; i < buttons.length; i++) {
-                JButton btn = createActionButton(buttons[i], btnColors[i]);
+                JButton btn = new JButton(buttons[i]);
+                btn.setAlignmentX(Component.CENTER_ALIGNMENT);
+                btn.setMaximumSize(new Dimension(150, 50));
+                btn.setForeground(Color.WHITE);
+                btn.setBackground(btnColors[i]);
+                btn.setFocusPainted(false);
+                btn.setFont(new Font("Roboto", Font.BOLD, 16));
+                btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+                final int index = i; // Chỉ số nút
+                btn.addActionListener(e -> {
+                    if (buttons[index].equals("Add Expense")) {
+                        AddExpense.AddExpense(model, conn, frame, propertyField);
+                    } else if (buttons[index].equals("Edit Expense")) {
+                        EditExpense.EditExpense(model, conn, frame, table, propertyField);
+                    } else if (buttons[index].equals("Delete Expense")) {
+                        DeleteExpense.DeleteExpense(model, conn, frame, table, propertyField);
+                    }
+                });
+
                 actionPanel.add(Box.createVerticalStrut(20));
                 actionPanel.add(btn);
             }
-        for (int i = 0; i < buttons.length; i++) {
-            JButton btn = new JButton(buttons[i]);
-            btn.setAlignmentX(Component.CENTER_ALIGNMENT);
-            btn.setMaximumSize(new Dimension(150, 50));
-            btn.setForeground(Color.WHITE);
-            btn.setBackground(btnColors[i]);
-            btn.setFocusPainted(false);
-            btn.setFont(new Font("Roboto", Font.BOLD, 16));
-            btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        
-            final int index = i; // Chỉ số nút
-            btn.addActionListener(e -> {
-                if (buttons[index].equals("Add Expense")) {
-                    AddExpense.AddExpense(model, conn, frame);
-                } else if (buttons[index].equals("Edit Expense")) {
-                    EditExpense.EditExpense(model, conn, frame, table);
-                } else if (buttons[index].equals("Delete Expense")) {
-                    DeleteExpense.DeleteExpense(model, conn, frame, table);
-                }
-            });
-        
-            actionPanel.add(Box.createVerticalStrut(20));
-            actionPanel.add(btn);
-        }
 
             mainArea.add(tableScrollPane, BorderLayout.CENTER);
             mainArea.add(actionPanel, BorderLayout.EAST);
@@ -202,6 +236,54 @@ public class ExpenseManagerView {
         }
         return btn;
     }
+
+    private void updatePropertyInDatabase(double newProperty) {
+        try {
+            String updateSQL = "UPDATE personal SET property = ?";
+            try (PreparedStatement pstmt = conn.prepareStatement(updateSQL)) {
+                pstmt.setDouble(1, newProperty);
+                pstmt.executeUpdate();
+            }
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(frame, "Failed to update property in the database.", "Error",
+                    JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
+    }
+
+    public void updatePropertyField() {
+        try {
+            String query = "SELECT property FROM personal";
+            try (PreparedStatement pstmt = conn.prepareStatement(query)) {
+                try (var rs = pstmt.executeQuery()) {
+                    if (rs.next()) {
+                        double property = rs.getDouble("property");
+                        propertyField.setText(String.format("Property: %.2f", property));
+                    } else {
+                        // Nếu không có giá trị nào, gán mặc định là 0
+                        propertyField.setText("Property: 0.00");
+                        initializeDefaultPropertyInDatabase(); // Gọi hàm thêm giá trị mặc định vào database
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    // Phương thức thêm giá trị mặc định vào database
+    private void initializeDefaultPropertyInDatabase() {
+        try {
+            String insertSQL = "INSERT INTO personal (property) VALUES (?)";
+            try (PreparedStatement pstmt = conn.prepareStatement(insertSQL)) {
+                pstmt.setDouble(1, 0.00); // Gán giá trị mặc định là 0
+                pstmt.executeUpdate();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+    
 
     // Hiển thị form Add Expense
     private void showAddExpenseDialog() {
